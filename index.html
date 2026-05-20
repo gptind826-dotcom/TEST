@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAITO — FF EMOTE PANEL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <style>
+        :root {
+            --sky: #00d4ff;
+            --sky2: #0099cc;
+            --sky3: #00eaff;
+            --accent: #0055cc;
+            --dark: #020c18;
+            --dark2: #041825;
+            --card: rgba(0,25,50,0.82);
+            --border: rgba(0,212,255,0.18);
+            --glow: 0 0 25px rgba(0,212,255,0.35);
+            --text: #cce8ff;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        #particles-js {
+            position: fixed; inset: 0; z-index: 0;
+            pointer-events: none;
+        }
+        /* ===== LOADING ===== */
+        #loadingOverlay {
+            position: fixed; inset:0; z-index:9999;
+            background: var(--dark);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.6s;
+        }
+        #loadingOverlay.hidden { opacity:0; pointer-events:none; }
+        .loading-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem; font-weight: 900;
+            background: linear-gradient(90deg, var(--sky), #fff, var(--sky3));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .loading-bar-bg {
+            width: 260px; height: 4px;
+            background: rgba(0,212,255,0.15);
+            border-radius: 4px; overflow: hidden;
+        }
+        #loadingProgress {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, var(--sky2), var(--sky), var(--sky3));
+            border-radius: 4px;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px var(--sky);
+        }
+        #loadingText {
+            margin-top: 1rem; font-size: 0.85rem;
+            color: var(--sky2); letter-spacing: 2px;
+        }
+        /* ===== HEADER ===== */
+        .dashboard-header {
+            position: sticky; top:0; z-index:100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.9rem 2rem;
+            background: rgba(2,12,24,0.96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .header-left { display:flex; align-items:center; gap:1rem; }
+        .header-logo { display:flex; align-items:center; gap:0.9rem; }
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, var(--sky2), var(--sky));
+            border-radius: 10px;
+            display: flex; align-items:center; justify-content:center;
+            box-shadow: var(--glow);
+            animation: iconGlow 3s infinite;
+        }
+        @keyframes iconGlow {
+            0%,100% { box-shadow: var(--glow); }
+            50% { box-shadow: 0 0 40px rgba(0,212,255,0.6); }
+        }
+        .logo-icon i { color:#fff; font-size:1.3rem; }
+        .logo-text { display:flex; flex-direction:column; }
+        .logo-main {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem; font-weight: 900;
+            background: linear-gradient(90deg, var(--sky), #fff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .logo-subtitle { font-size:0.75rem; color: var(--sky2); letter-spacing:2px; }
+        .header-right { display:flex; align-items:center; gap:1rem; }
+        .status-chip {
+            display: flex; align-items:center; gap:6px;
+            padding: 0.4rem 0.9rem;
+            background: rgba(0,20,45,0.8);
+            border: 1px solid var(--border);
+            border-radius: 20px; font-size:0.8rem;
+        }
+        .status-dot {
+            width:7px; height:7px; border-radius:50%;
+            background: var(--sky);
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+        .status-text { color: var(--sky2); }
+        #connectionStatus { color: var(--sky); font-weight:700; }
+        .btn-logout {
+            padding: 0.4rem 0.9rem;
+            background: rgba(255,60,60,0.1);
+            border: 1px solid rgba(255,60,60,0.3);
+            border-radius: 8px; color:#ff8080;
+            cursor: pointer; font-family:'Rajdhani',sans-serif; font-size:0.85rem;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background:rgba(255,60,60,0.2); }
+        /* ===== MAIN LAYOUT ===== */
+        .dashboard-content { position:relative; z-index:1; padding:1.8rem 2rem; max-width:1600px; margin:0 auto; }
+        /* ===== SECTION HEADER ===== */
+        .section-header {
+            margin-bottom: 1.5rem; padding-bottom: 0.9rem;
+            border-bottom: 1px solid var(--border); position:relative;
+        }
+        .section-header h2 {
+            font-family:'Orbitron',sans-serif; font-size:1.3rem;
+            color: var(--sky); display:flex; align-items:center; gap:10px;
+        }
+        .header-glow {
+            position:absolute; bottom:-1px; left:0;
+            width:180px; height:2px;
+            background: linear-gradient(90deg, var(--sky), var(--sky3), transparent);
+            animation: glowScan 3s infinite;
+        }
+        @keyframes glowScan { 0%{opacity:0.4;} 50%{opacity:1;} 100%{opacity:0.4;} }
+        /* ===== INPUT CARDS ===== */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.2rem; margin-bottom:1.5rem;
+        }
+        .input-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding:1.2rem 1.5rem;
+            display: flex; align-items:center; gap:1.2rem;
+            transition: all 0.3s; position:relative; overflow:hidden;
+        }
+        .input-card:hover { border-color: var(--sky); box-shadow: var(--glow); transform:translateY(-2px); }
+        .input-card::before {
+            content:''; position:absolute; inset:0;
+            background: linear-gradient(45deg, transparent, rgba(0,212,255,0.04), transparent);
+            transform: translateX(-100%); transition: transform 0.5s;
+        }
+        .input-card:hover::before { transform: translateX(100%); }
+        .input-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--dark2), var(--accent));
+            display:flex; align-items:center; justify-content:center;
+            border: 1px solid var(--border); flex-shrink:0;
+        }
+        .input-icon i { color: var(--sky); font-size:1.1rem; }
+        .input-info { flex:1; }
+        .input-info label {
+            display:block; font-size:0.75rem; color:var(--sky2);
+            letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;
+        }
+        .input-info input, .input-info select {
+            width:100%; background:rgba(0,15,35,0.9);
+            border:1px solid rgba(0,212,255,0.15); border-radius:8px;
+            color: #e0f4ff; font-family:'Rajdhani',sans-serif; font-size:1rem;
+            padding:0.55rem 0.8rem; outline:none; transition:all 0.3s;
+        }
+        .input-info input:focus, .input-info select:focus {
+            border-color: var(--sky); box-shadow: 0 0 15px rgba(0,212,255,0.1);
+        }
+        .input-info select { cursor:pointer; }
+        .input-info select option { background: #041825; }
+        /* EW Mode Toggle */
+        .ew-toggle-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding:1.2rem 1.5rem;
+            display:flex; align-items:center; justify-content:space-between;
+            gap:1rem; transition:all 0.3s;
+        }
+        .ew-toggle-card:hover { border-color:var(--sky); }
+        .ew-info { display:flex; align-items:center; gap:1rem; }
+        .ew-icon {
+            width:48px; height:48px; border-radius:12px;
+            background:linear-gradient(135deg,var(--dark2),#004488);
+            display:flex;align-items:center;justify-content:center;
+            border:1px solid var(--border);
+        }
+        .ew-icon i { color:var(--sky); font-size:1.1rem; }
+        .ew-label { font-size:0.95rem; font-weight:600; color:var(--text); }
+        .ew-desc { font-size:0.75rem; color:var(--sky2); margin-top:2px; }
+        .toggle { position:relative; display:inline-block; width:52px; height:28px; }
+        .toggle input { opacity:0; width:0; height:0; }
+        .slider {
+            position:absolute; cursor:pointer; inset:0;
+            background:rgba(0,30,60,0.8); border:1px solid rgba(0,212,255,0.2);
+            border-radius:28px; transition:0.3s;
+        }
+        .slider:before {
+            content:''; position:absolute;
+            height:20px; width:20px; left:3px; bottom:3px;
+            background:rgba(0,150,200,0.5); border-radius:50%; transition:0.3s;
+        }
+        input:checked + .slider { background:rgba(0,100,200,0.3); border-color:var(--sky); }
+        input:checked + .slider:before { transform:translateX(24px); background:var(--sky); box-shadow:0 0 10px var(--sky); }
+        /* Manual send */
+        .manual-send-row {
+            display:flex; gap:1rem; margin-bottom:1.5rem;
+            background:var(--card); border:1px solid var(--border);
+            border-radius:14px; padding:1.2rem 1.5rem; align-items:flex-end;
+        }
+        .manual-send-row .input-group { flex:1; }
+        .manual-send-row label {
+            display:block; font-size:0.75rem; color:var(--sky2);
+            letter-spacing:1px; text-transform:uppercase; margin-bottom:6px;
+        }
+        .manual-send-row input {
+            width:100%; background:rgba(0,15,35,0.9);
+            border:1px solid rgba(0,212,255,0.15); border-radius:8px;
+            color:#e0f4ff; font-family:'Rajdhani',sans-serif; font-size:1rem;
+            padding:0.55rem 0.8rem; outline:none; transition:all 0.3s;
+        }
+        .manual-send-row input:focus { border-color:var(--sky); box-shadow:0 0 15px rgba(0,212,255,0.1); }
+        .btn-send-manual {
+            padding:0.6rem 1.8rem;
+            background:linear-gradient(135deg,var(--sky2),var(--sky));
+            border:none; border-radius:8px; color:#000;
+            font-family:'Orbitron',sans-serif; font-size:0.8rem; font-weight:700;
+            cursor:pointer; transition:all 0.3s; white-space:nowrap;
+            letter-spacing:1px;
+        }
+        .btn-send-manual:hover { box-shadow:var(--glow); transform:translateY(-2px); }
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            display:flex; gap:1rem; margin-bottom:1.5rem;
+            flex-wrap:wrap; align-items:center;
+        }
+        .search-box {
+            flex:1; min-width:200px; position:relative;
+        }
+        .search-box i {
+            position:absolute; left:14px; top:50%;
+            transform:translateY(-50%); color:var(--sky2); font-size:0.95rem;
+        }
+        .search-box input {
+            width:100%; background:var(--card);
+            border:1px solid var(--border); border-radius:10px;
+            color:#e0f4ff; font-family:'Rajdhani',sans-serif; font-size:1rem;
+            padding:0.65rem 1rem 0.65rem 2.6rem; outline:none; transition:all 0.3s;
+        }
+        .search-box input:focus { border-color:var(--sky); }
+        .filter-select {
+            background:var(--card); border:1px solid var(--border);
+            border-radius:10px; color:#e0f4ff;
+            font-family:'Rajdhani',sans-serif; font-size:0.9rem;
+            padding:0.65rem 1rem; outline:none; cursor:pointer; transition:all 0.3s;
+        }
+        .filter-select:focus { border-color:var(--sky); }
+        .filter-select option { background:#041825; }
+        .emote-counter {
+            background:var(--card); border:1px solid var(--border);
+            border-radius:10px; padding:0.65rem 1.2rem;
+            font-size:0.85rem; color:var(--sky2); white-space:nowrap;
+        }
+        .emote-counter span { color:var(--sky); font-weight:700; font-family:'Orbitron',sans-serif; }
+        /* ===== EMOTE GRID ===== */
+        .emotes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .emote-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding:0.9rem 0.7rem;
+            display:flex; flex-direction:column; align-items:center;
+            gap:0.5rem; cursor:pointer; transition:all 0.25s;
+            position:relative; overflow:hidden;
+        }
+        .emote-card:hover {
+            border-color:var(--sky); box-shadow:var(--glow);
+            transform:translateY(-4px) scale(1.02);
+        }
+        .emote-card:active {
+            transform:scale(0.96);
+            border-color: var(--sky3);
+            box-shadow: 0 0 30px rgba(0,212,255,0.7);
+        }
+        .emote-card.sending {
+            border-color: var(--sky3);
+            box-shadow: 0 0 35px rgba(0,212,255,0.6);
+            animation: cardPulse 0.5s ease;
+        }
+        @keyframes cardPulse {
+            0%  { box-shadow: 0 0 10px rgba(0,212,255,0.2); }
+            50% { box-shadow: 0 0 40px rgba(0,212,255,0.9); }
+            100%{ box-shadow: 0 0 35px rgba(0,212,255,0.6); }
+        }
+        .emote-card::before {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(135deg,rgba(0,212,255,0.04),transparent);
+            opacity:0; transition:opacity 0.3s;
+        }
+        .emote-card:hover::before { opacity:1; }
+        .ob53-tag {
+            position:absolute; top:8px; right:8px;
+            background:linear-gradient(135deg,#003366,#0055aa);
+            color:var(--sky); font-family:'Orbitron',sans-serif;
+            font-size:0.55rem; font-weight:700; padding:2px 7px;
+            border-radius:20px; border:1px solid rgba(0,212,255,0.25);
+            letter-spacing:1px;
+        }
+        .emote-number {
+            font-family:'Orbitron',sans-serif; font-size:0.6rem;
+            color:rgba(0,180,255,0.4); letter-spacing:1px;
+        }
+        .emote-img-container {
+            width:80px; height:80px;
+            display:flex; align-items:center; justify-content:center;
+            position:relative;
+        }
+        .emote-img {
+            width:80px; height:80px; object-fit:contain;
+            transition:transform 0.3s;
+            filter: drop-shadow(0 0 6px rgba(0,212,255,0.25));
+        }
+        .emote-card:hover .emote-img { transform:scale(1.1); }
+        .emote-name {
+            font-size:0.72rem; color:#9dd; text-align:center;
+            max-width:120px; overflow:hidden; text-overflow:ellipsis;
+            white-space:nowrap; font-weight:600;
+        }
+        .emote-id {
+            font-family:'Orbitron',sans-serif; font-size:0.6rem;
+            color:rgba(0,180,255,0.5); letter-spacing:1px;
+        }
+        .emote-actions {
+            display:flex; gap:0.4rem; width:100%; margin-top:2px;
+        }
+        .send-emote-btn {
+            flex:1; padding:0.4rem 0.3rem;
+            background:linear-gradient(135deg,var(--sky2),var(--sky));
+            border:none; border-radius:7px; color:#000;
+            font-family:'Orbitron',sans-serif; font-size:0.6rem; font-weight:700;
+            cursor:pointer; transition:all 0.2s; letter-spacing:0.5px;
+            display:flex; align-items:center; justify-content:center; gap:4px;
+        }
+        .send-emote-btn:hover { box-shadow:0 0 15px rgba(0,212,255,0.4); transform:translateY(-1px); }
+        .send-emote-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+        .copy-id-btn {
+            padding:0.4rem 0.6rem;
+            background:rgba(0,50,100,0.6); border:1px solid var(--border);
+            border-radius:7px; color:var(--sky2);
+            font-size:0.75rem; cursor:pointer; transition:all 0.2s;
+        }
+        .copy-id-btn:hover { border-color:var(--sky); color:var(--sky); }
+        /* Load more */
+        .load-more-container { display:flex; justify-content:center; margin:2rem 0; }
+        .btn-load-more {
+            padding:0.8rem 2.5rem;
+            background:rgba(0,25,55,0.8); border:1px solid var(--border);
+            border-radius:10px; color:var(--sky);
+            font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:700;
+            cursor:pointer; transition:all 0.3s; letter-spacing:1px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .btn-load-more:hover { border-color:var(--sky); box-shadow:var(--glow); transform:translateY(-2px); }
+        .btn-load-more:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+        /* No results */
+        .no-results {
+            text-align:center; padding:4rem 2rem;
+            grid-column:1/-1;
+        }
+        .no-results i { font-size:3rem; color:rgba(0,180,255,0.2); display:block; margin-bottom:1rem; }
+        .no-results h3 { font-family:'Orbitron',sans-serif; color:rgba(0,180,255,0.4); font-size:1rem; }
+        .no-results p { color:rgba(0,150,200,0.4); font-size:0.85rem; margin-top:0.5rem; }
+        /* ===== NOTIFICATIONS ===== */
+        .notification {
+            position:fixed; bottom:2rem; right:2rem; z-index:9998;
+            padding:0.9rem 1.4rem; border-radius:10px;
+            display:flex; align-items:center; gap:10px;
+            font-size:0.9rem; font-weight:600;
+            animation:slideIn 0.3s ease-out; max-width:360px;
+            backdrop-filter:blur(10px);
+        }
+        .notification.success { background:rgba(0,200,100,0.15); border:1px solid rgba(0,200,100,0.3); color:#80ffaa; }
+        .notification.error { background:rgba(255,50,50,0.15); border:1px solid rgba(255,50,50,0.3); color:#ff8080; }
+        .notification.warning { background:rgba(255,200,0,0.15); border:1px solid rgba(255,200,0,0.3); color:#ffdd60; }
+        .notification.info { background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.3); color:var(--sky); }
+        @keyframes slideIn { from{transform:translateX(120%);opacity:0;} to{transform:translateX(0);opacity:1;} }
+        @keyframes slideOut { from{transform:translateX(0);opacity:1;} to{transform:translateX(120%);opacity:0;} }
+        /* Responsive */
+        @media(max-width:700px) {
+            .dashboard-header { padding:0.7rem 1rem; }
+            .dashboard-content { padding:1rem; }
+            .emotes-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:0.7rem; }
+            .filter-bar { gap:0.6rem; }
+            .header-right { gap:0.5rem; }
+            .logo-main { font-size:1rem; }
+        }
+    </style>
+</head>
+<body>
+<div id="particles-js"></div>
+<!-- Loading -->
+<div id="loadingOverlay">
+    <div class="loading-logo">SAITO_MUTSUKI</div>
+    <div class="loading-bar-bg"><div id="loadingProgress"></div></div>
+    <div id="loadingText">LOADING EMOTES...</div>
+</div>
+
+<!-- Header -->
+<header class="dashboard-header">
+    <div class="header-left">
+        <div class="header-logo">
+            <div class="logo-icon"><i class="fas fa-bolt"></i></div>
+            <div class="logo-text">
+                <div class="logo-main">SAITO_MUTSUKI</div>
+                <div class="logo-subtitle">FREE FIRE EMOTE PANEL</div>
+            </div>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="status-chip">
+            <div class="status-dot"></div>
+            <span class="status-text">SERVER:</span>
+            <span id="connectionStatus">ONLINE</span>
+        </div>
+        <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> LOGOUT</button>
+    </div>
+</header>
+
+<!-- Main Content -->
+<div class="dashboard-content">
+    <!-- Section: Config -->
+    <div class="section-header">
+        <h2><i class="fas fa-sliders-h"></i> CONFIGURATION</h2>
+        <div class="header-glow"></div>
+    </div>
+
+    <div class="input-grid">
+        <div class="input-card">
+            <div class="input-icon"><i class="fas fa-key"></i></div>
+            <div class="input-info">
+                <label>Team Code</label>
+                <input type="text" id="teamCodeInput" placeholder="Enter team code..." maxlength="20">
+            </div>
+        </div>
+        <div class="input-card">
+            <div class="input-icon"><i class="fas fa-id-badge"></i></div>
+            <div class="input-info">
+                <label>Player UID</label>
+                <input type="text" id="uidInput" placeholder="Enter your UID..." maxlength="20">
+            </div>
+        </div>
+        <div class="input-card">
+            <div class="input-icon"><i class="fas fa-globe"></i></div>
+            <div class="input-info">
+                <label>Region</label>
+                <select id="regionSelect">
+                    <option value="BD">🇧🇩 Bangladesh (BD)</option>
+                    <option value="IND">🇮🇳 India (IND)</option>
+                    <option value="SG">🇸🇬 Singapore (SG)</option>
+                    <option value="VN">🇻🇳 Vietnam (VN)</option>
+                    <option value="TH">🇹🇭 Thailand (TH)</option>
+                    <option value="ID">🇮🇩 Indonesia (ID)</option>
+                    <option value="TW">🇹🇼 Taiwan (TW)</option>
+                    <option value="US">🇺🇸 USA (US)</option>
+                    <option value="SAC">🌎 SAC</option>
+                    <option value="ME">🌍 Middle East (ME)</option>
+                    <option value="PK">🇵🇰 Pakistan (PK)</option>
+                    <option value="CIS">🌐 CIS</option>
+                    <option value="BR">🇧🇷 Brazil (BR)</option>
+                </select>
+            </div>
+        </div>
+        <div class="ew-toggle-card">
+            <div class="ew-info">
+                <div class="ew-icon"><i class="fas fa-bolt"></i></div>
+                <div>
+                    <div class="ew-label">⚡ EW MODE</div>
+                    <div class="ew-desc">Join → Emote → Leave instantly (bot invisible)</div>
+                </div>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="ewModeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Manual Send -->
+    <div class="manual-send-row">
+        <div class="input-group">
+            <label><i class="fas fa-magic"></i> MANUAL EMOTE ID</label>
+            <input type="text" id="manualEmoteIdInput" placeholder="Enter 9-digit emote ID (e.g. 909000001)" maxlength="9">
+        </div>
+        <button class="btn-send-manual" onclick="sendManualEmote()">
+            <i class="fas fa-paper-plane"></i> SEND
+        </button>
+    </div>
+
+    <!-- Emote Library Section -->
+    <div class="section-header" style="margin-top:1rem;">
+        <h2><i class="fas fa-th-large"></i> EMOTE LIBRARY</h2>
+        <div class="header-glow"></div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by emote name or ID...">
+        </div>
+        <select class="filter-select" id="filterSelect">
+            <option value="all">🔵 All Tags</option>
+            <optgroup label="── EVO Gun Max ──">
+                <option value="evo_max">😎 EVO Gun Max</option>
+                <option value="evo_lv3">🔥 EVO Gun Lv3</option>
+                <option value="evo_lv2">💠 EVO Gun Lv2</option>
+                <option value="evo_lv1">💕 EVO Gun Lv1</option>
+            </optgroup>
+            <optgroup label="── Latest Patches ──">
+                <option value="ob53">🎁 OB53 (New!)</option>
+                <option value="ob51">🛑 OB51</option>
+                <option value="ob50">🟡 OB50</option>
+                <option value="ob49">🟠 OB49</option>
+                <option value="ob48">🔶 OB48</option>
+                <option value="ob47">🔷 OB47</option>
+                <option value="ob46">🟣 OB46</option>
+            </optgroup>
+            <optgroup label="── Older Patches ──">
+                <option value="ob45">OB45</option>
+                <option value="ob44">OB44</option>
+                <option value="ob43">OB43</option>
+                <option value="ob42">OB42</option>
+                <option value="ob41">OB41</option>
+                <option value="ob40">OB40</option>
+                <option value="ob39">OB39</option>
+                <option value="ob38">OB38</option>
+                <option value="ob37">OB37</option>
+                <option value="ob36">OB36</option>
+                <option value="ob35">OB35</option>
+                <option value="ob34">OB34</option>
+                <option value="ob33">OB33</option>
+            </optgroup>
+        </select>
+        <div class="emote-counter">SHOWING: <span id="emoteCount">0</span> EMOTES</div>
+    </div>
+
+    <!-- Emote Grid -->
+    <div class="emotes-grid" id="emotesGrid"></div>
+
+    <!-- Load More -->
+    <div class="load-more-container">
+        <button class="btn-load-more" id="loadMoreBtn" onclick="loadMoreEmotes()" style="display:none;">
+            <i class="fas fa-chevron-down"></i><span>LOAD MORE EMOTES</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    // ============== AUTH GUARD ==============
+    (function() {
+        if (localStorage.getItem('kc_logged_in') !== '1') {
+            window.location.replace('login.html');
+        }
+    })();
+
+    // ============== DATA ==============
+    let allEmotes = [];
+    const state = {
+        filteredEmotes: [],
+        currentIndex: 0,
+        batchSize: 48,
+        isLoading: false,
+        allEmotesLoaded: false
+    };
+
+    const IMG_BASE = 'https://cdn.jsdelivr.net/gh/ShahGCreator/icon@main/PNG/';
+    const IMG_LOCAL = 'emote_pngs/';
+
+    // Elements
+    const emotesGrid = document.getElementById('emotesGrid');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const emoteCount = document.getElementById('emoteCount');
+    const searchInput = document.getElementById('searchInput');
+    const filterSelect = document.getElementById('filterSelect');
+    const teamCodeInput = document.getElementById('teamCodeInput');
+    const uidInput = document.getElementById('uidInput');
+    const regionSelect = document.getElementById('regionSelect');
+    const ewModeToggle = document.getElementById('ewModeToggle');
+    const manualEmoteIdInput = document.getElementById('manualEmoteIdInput');
+    const connectionStatus = document.getElementById('connectionStatus');
+
+    // ============== INIT ==============
+    window.addEventListener('load', async () => {
+        const progress = document.getElementById('loadingProgress');
+        const loadText = document.getElementById('loadingText');
+
+        // Simulate progress
+        let p = 0;
+        const interval = setInterval(() => {
+            p = Math.min(p + Math.random() * 15, 90);
+            progress.style.width = p + '%';
+        }, 200);
+
+        try {
+            // Load emotes from JSON file
+            const resp = await fetch('all_emote.json');
+            const data = await resp.json();
+            let num = 1;
+            allEmotes = Object.values(data).map(e => ({ ...e, number: num++ }));
+
+            clearInterval(interval);
+            progress.style.width = '100%';
+            loadText.textContent = `LOADED ${allEmotes.length} EMOTES`;
+
+            await new Promise(r => setTimeout(r, 600));
+            document.getElementById('loadingOverlay').classList.add('hidden');
+
+            // Restore saved inputs
+            teamCodeInput.value = localStorage.getItem('kc_teamCode') || '';
+            uidInput.value = localStorage.getItem('kc_uid') || '';
+            regionSelect.value = localStorage.getItem('kc_region') || 'BD';
+            connectionStatus.textContent = (localStorage.getItem('kc_region') || 'BD') + ' • ONLINE';
+
+            filterAndRender();
+            initParticles();
+
+            // Save inputs
+            teamCodeInput.addEventListener('input', () => localStorage.setItem('kc_teamCode', teamCodeInput.value));
+            uidInput.addEventListener('input', () => localStorage.setItem('kc_uid', uidInput.value));
+            regionSelect.addEventListener('change', () => {
+                localStorage.setItem('kc_region', regionSelect.value);
+                connectionStatus.textContent = regionSelect.value + ' • ONLINE';
+            });
+
+            searchInput.addEventListener('input', filterAndRender);
+            filterSelect.addEventListener('change', filterAndRender);
+            window.addEventListener('scroll', handleScroll);
+
+        } catch(e) {
+            clearInterval(interval);
+            loadText.textContent = 'ERROR LOADING DATA';
+            console.error(e);
+        }
+    });
+
+    // ============== OB VERSION MAP ==============
+    // 909000001-040  = EVO Lv1  (base gun emotes)
+    // 909000041-080  = EVO Lv2
+    // 909000081-120  = EVO Lv3
+    // 909000121-150  = EVO Max
+    // 909033xxx      = OB33 patch emotes
+    // 909034xxx      = OB34  ...and so on up to OB51
+    const OB_PREFIX = {
+        ob53:'909053',
+        ob51:'909051', ob50:'909050', ob49:'909049', ob48:'909048',
+        ob47:'909047', ob46:'909046', ob45:'909045', ob44:'909044',
+        ob43:'909043', ob42:'909042', ob41:'909041', ob40:'909040',
+        ob39:'909039', ob38:'909038', ob37:'909037', ob36:'909036',
+        ob35:'909035', ob34:'909034', ob33:'909033',
+    };
+
+    function getEvoLevel(emoteId) {
+        if (!emoteId.startsWith('909000')) return null;
+        const n = parseInt(emoteId.slice(6));
+        if (n >= 1   && n <= 40)  return 'lv1';
+        if (n >= 41  && n <= 80)  return 'lv2';
+        if (n >= 81  && n <= 120) return 'lv3';
+        if (n >= 121 && n <= 160) return 'max';
+        return null;
+    }
+
+    // ============== FILTER & RENDER ==============
+    function filterAndRender() {
+        const q = searchInput.value.toLowerCase().trim();
+        const f = filterSelect.value;
+
+        state.filteredEmotes = allEmotes.filter(em => {
+            const id = em.emote_id;
+            const matchQ = !q || id.includes(q) || (em.emote_name && em.emote_name.toLowerCase().includes(q));
+            let matchF = true;
+
+            if (f !== 'all') {
+                if (f === 'evo_max') matchF = getEvoLevel(id) === 'max';
+                else if (f === 'evo_lv3') matchF = getEvoLevel(id) === 'lv3';
+                else if (f === 'evo_lv2') matchF = getEvoLevel(id) === 'lv2';
+                else if (f === 'evo_lv1') matchF = getEvoLevel(id) === 'lv1';
+                else if (OB_PREFIX[f]) matchF = id.startsWith(OB_PREFIX[f]);
+                else matchF = true;
+            }
+
+            return matchQ && matchF;
+        });
+
+        state.currentIndex = 0;
+        state.allEmotesLoaded = false;
+        updateEmoteCount();
+        renderEmotes();
+    }
+
+    function updateEmoteCount() { emoteCount.textContent = state.filteredEmotes.length; }
+
+    function getImgUrl(emoteId) {
+        return IMG_BASE + emoteId + '.png';
+    }
+
+    function renderEmotes() {
+        if (state.currentIndex === 0) {
+            emotesGrid.innerHTML = '';
+            if (state.filteredEmotes.length === 0) {
+                emotesGrid.innerHTML = '<div class="no-results"><i class="fas fa-search"></i><h3>NO EMOTES FOUND</h3><p>Try another name or ID</p></div>';
+                loadMoreBtn.style.display = 'none'; return;
+            }
+        }
+        const end = Math.min(state.currentIndex + state.batchSize, state.filteredEmotes.length);
+        const batch = state.filteredEmotes.slice(state.currentIndex, end);
+
+        batch.forEach(emote => {
+            const card = document.createElement('div');
+            card.className = 'emote-card';
+            card.dataset.emoteId = emote.emote_id;
+            const imgUrl = getImgUrl(emote.emote_id);
+            const localUrl = IMG_LOCAL + emote.emote_id + '.png';
+            const id = emote.emote_id;
+
+            // Build tag
+            let tagHtml = '';
+            const evoLv = getEvoLevel(id);
+            if (evoLv === 'max') {
+                tagHtml = '<div class="ob53-tag" style="background:linear-gradient(135deg,#6600aa,#9900ff);color:#ffccff;">EVO MAX</div>';
+            } else if (evoLv === 'lv3') {
+                tagHtml = '<div class="ob53-tag" style="background:linear-gradient(135deg,#003300,#006600);color:#88ff88;">EVO Lv3</div>';
+            } else if (evoLv === 'lv2') {
+                tagHtml = '<div class="ob53-tag" style="background:linear-gradient(135deg,#001833,#003366);color:#88ccff;">EVO Lv2</div>';
+            } else if (evoLv === 'lv1') {
+                tagHtml = '<div class="ob53-tag" style="background:linear-gradient(135deg,#1a1a00,#333300);color:#cccc44;">EVO Lv1</div>';
+            } else {
+                for (const [ob, pfx] of Object.entries(OB_PREFIX)) {
+                    if (id.startsWith(pfx)) {
+                        const obNum = ob.replace('ob','OB');
+                        const obN = parseInt(ob.replace('ob',''));
+                        let bg = obN >= 53 ? 'background:linear-gradient(135deg,#660000,#cc2200);color:#ffaaaa'
+                               : obN >= 50 ? 'background:linear-gradient(135deg,#003366,#0055aa);color:#7bd'
+                               : obN >= 47 ? 'background:linear-gradient(135deg,#002244,#003366);color:#6ac'
+                               : 'background:linear-gradient(135deg,#1a1a2e,#16213e);color:#7788aa';
+                        tagHtml = '<div class="ob53-tag" style="' + bg + '">' + obNum + '</div>';
+                        break;
+                    }
+                }
+            }
+
+            const emoteName = emote.emote_name || emote.emote_id;
+            card.innerHTML =
+                tagHtml +
+                '<div class="emote-number">#' + emote.number + '</div>' +
+                '<div class="emote-img-container">' +
+                '<img src="' + imgUrl + '" alt="' + emoteName + '" class="emote-img" ' +
+                'onerror="this.onerror=null;this.src=\'' + localUrl + '\'"></div>' +
+                '<div class="emote-name" title="' + emoteName + '">' + emoteName + '</div>' +
+                '<div class="emote-id">' + id + '</div>' +
+                '<div class="emote-actions">' +
+                '<button class="send-emote-btn" data-emote-id="' + id + '">' +
+                '<i class="fas fa-paper-plane"></i> SEND</button>' +
+                '<button class="copy-id-btn" data-emote-id="' + id + '" title="Copy ID">' +
+                '<i class="fas fa-copy"></i></button></div>';
+
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.copy-id-btn')) return;
+                card.classList.add('sending');
+                setTimeout(() => card.classList.remove('sending'), 800);
+                sendEmote(emote.emote_id);
+            });
+
+            emotesGrid.appendChild(card);
+        });
+
+        state.currentIndex = end;
+        if (state.currentIndex >= state.filteredEmotes.length) {
+            state.allEmotesLoaded = true;
+            loadMoreBtn.style.display = 'none';
+        } else {
+            loadMoreBtn.style.display = 'flex';
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = '<i class="fas fa-chevron-down"></i><span>LOAD MORE EMOTES</span>';
+        }
+
+        document.querySelectorAll('.send-emote-btn').forEach(btn => {
+            btn.addEventListener('click', e => { e.stopPropagation(); sendEmote(btn.dataset.emoteId); });
+        });
+        document.querySelectorAll('.copy-id-btn').forEach(btn => {
+            btn.addEventListener('click', e => { e.stopPropagation(); copyToClipboard(btn.dataset.emoteId); });
+        });
+    }
+
+    function loadMoreEmotes() {
+        if (state.isLoading || state.allEmotesLoaded) return;
+        loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>LOADING...</span>';
+        loadMoreBtn.disabled = true;
+        setTimeout(() => { renderEmotes(); }, 200);
+    }
+
+    function handleScroll() {
+        if (state.allEmotesLoaded || state.isLoading) return;
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 120) {
+            loadMoreEmotes();
+        }
+    }
+
+    // ============== SEND EMOTE ==============
+    async function sendEmote(emoteId) {
+        if (state.isLoading) return;
+        state.isLoading = true;
+
+        const teamCode = teamCodeInput.value.trim();
+        const uid = uidInput.value.trim();
+        const region = regionSelect.value;
+        const ewMode = ewModeToggle.checked;
+
+        if (!teamCode || !uid) {
+            showNotification('Team Code এবং UID দিন!', 'warning');
+            state.isLoading = false; return;
+        }
+
+        const sendBtn = document.querySelector(`.send-emote-btn[data-emote-id="${emoteId}"]`);
+        const origContent = sendBtn ? sendBtn.innerHTML : '';
+        if (sendBtn) { sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; sendBtn.disabled = true; }
+        connectionStatus.textContent = 'SENDING...';
+        connectionStatus.style.color = '#ffcc00';
+
+        try {
+            let apiUrl;
+            if (ewMode) {
+                apiUrl = `/ew?tc=${encodeURIComponent(teamCode)}&emote_id=${emoteId}&uid1=${encodeURIComponent(uid)}`;
+            } else {
+                apiUrl = `/join?tc=${encodeURIComponent(teamCode)}&emote_id=${emoteId}&uid1=${encodeURIComponent(uid)}`;
+            }
+
+            const response = await fetch(apiUrl);
+            if (response.ok) {
+                const modeLabel = ewMode ? '⚡ EW Mode' : 'Normal';
+                showNotification(`✓ Emote ${emoteId} sent! [${modeLabel}]`, 'success');
+                connectionStatus.textContent = region + ' • ONLINE';
+                connectionStatus.style.color = 'var(--sky)';
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch(err) {
+            showNotification(`Error: ${err.message}`, 'error');
+            connectionStatus.textContent = 'ERROR';
+            connectionStatus.style.color = '#ff5555';
+            setTimeout(() => {
+                connectionStatus.textContent = region + ' • ONLINE';
+                connectionStatus.style.color = 'var(--sky)';
+            }, 3000);
+        } finally {
+            if (sendBtn) { sendBtn.innerHTML = origContent; sendBtn.disabled = false; }
+            state.isLoading = false;
+        }
+    }
+
+    function sendManualEmote() {
+        const emoteId = manualEmoteIdInput.value.trim();
+        if (!emoteId) { showNotification('Emote ID দিন!', 'warning'); return; }
+        if (!/^\d{9}$/.test(emoteId)) { showNotification('Emote ID 9 digits হতে হবে', 'warning'); return; }
+        sendEmote(emoteId);
+    }
+
+    function logout() {
+        localStorage.removeItem('kc_logged_in');
+        window.location.href = 'login.html';
+    }
+
+    // ============== UTILITIES ==============
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text)
+            .then(() => showNotification(`✓ Copied: ${text}`, 'success'))
+            .catch(() => {
+                const el = document.createElement('textarea');
+                el.value = text; document.body.appendChild(el);
+                el.select(); document.execCommand('copy');
+                document.body.removeChild(el);
+                showNotification(`✓ Copied: ${text}`, 'success');
+            });
+    }
+
+    function showNotification(msg, type='info') {
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        const n = document.createElement('div');
+        n.className = `notification ${type}`;
+        const icons = {success:'check-circle', error:'exclamation-circle', warning:'exclamation-triangle', info:'info-circle'};
+        n.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}"></i><span>${msg}</span>`;
+        document.body.appendChild(n);
+        setTimeout(() => { n.style.animation='slideOut 0.3s ease-out'; setTimeout(()=>n.remove(),300); }, 3200);
+    }
+
+    // ============== PARTICLES ==============
+    function initParticles() {
+        if (typeof particlesJS === 'undefined') return;
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 55, density: { enable:true, value_area:900 } },
+                color: { value: '#00d4ff' },
+                shape: { type: 'circle' },
+                opacity: { value:0.25, random:true },
+                size: { value:2, random:true },
+                line_linked: { enable:true, distance:140, color:'#0099cc', opacity:0.08, width:1 },
+                move: { enable:true, speed:0.9, random:true, out_mode:'out' }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: { onhover:{enable:false}, onclick:{enable:false} }
+            }
+        });
+    }
+</script>
+</body>
+</html>
