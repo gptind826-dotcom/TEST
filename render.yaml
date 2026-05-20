@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: kawsar-codex-emote-panel
+    runtime: python
+    region: singapore
+    plan: free
+
+    # ── Build ──────────────────────────────────────────
+    buildCommand: pip install -r requirements.txt
+
+    # ── Start ──────────────────────────────────────────
+    startCommand: gunicorn "run:create_app()" --worker-class gthread --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
+
+    # ── Environment Variables ──────────────────────────
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+    # ── Health Check ──────────────────────────────────
+    healthCheckPath: /status
