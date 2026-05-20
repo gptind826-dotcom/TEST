@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAITO_MUTSUKI — PANEL LOGIN</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --sky: #00d4ff;
+            --sky2: #0099cc;
+            --sky3: #00eaff;
+            --dark: #020b14;
+            --dark2: #041825;
+            --card: rgba(0,30,55,0.85);
+            --glow: 0 0 30px rgba(0,212,255,0.4);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark);
+            color: #cce8ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated grid background */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50px); }
+        }
+
+        /* Floating orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: orbFloat 8s ease-in-out infinite;
+            z-index: 0;
+        }
+        .orb1 { width:400px; height:400px; background:rgba(0,180,255,0.08); top:-100px; right:-100px; animation-delay:0s; }
+        .orb2 { width:300px; height:300px; background:rgba(0,100,200,0.1); bottom:-50px; left:-80px; animation-delay:4s; }
+        .orb3 { width:200px; height:200px; background:rgba(0,230,255,0.07); top:40%; left:50%; animation-delay:2s; }
+
+        @keyframes orbFloat {
+            0%,100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.05); }
+        }
+
+        /* Particles */
+        .particles { position:fixed; inset:0; z-index:0; overflow:hidden; }
+        .particle {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: var(--sky);
+            border-radius: 50%;
+            animation: particleFly linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes particleFly {
+            0% { transform: translateY(100vh); opacity:0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(-100px); opacity:0; }
+        }
+
+        /* Main container */
+        .login-wrap {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 460px;
+            padding: 1.5rem;
+        }
+
+        /* Top brand */
+        .brand-top {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-icon {
+            width: 80px; height: 80px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, var(--sky), #0055aa);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--glow), 0 0 60px rgba(0,212,255,0.3);
+            animation: iconPulse 3s ease-in-out infinite;
+            position: relative;
+        }
+        .brand-icon::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(var(--sky), transparent, var(--sky3), transparent, var(--sky));
+            animation: spin 3s linear infinite;
+            z-index: -1;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes iconPulse {
+            0%,100% { box-shadow: var(--glow); }
+            50% { box-shadow: 0 0 60px rgba(0,212,255,0.7); }
+        }
+
+        .brand-icon i { font-size: 2rem; color: #fff; }
+
+        .brand-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--sky), #fff, var(--sky3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+        .brand-sub {
+            font-size: 0.85rem;
+            color: var(--sky2);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Login card */
+        .login-card {
+            background: var(--card);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--sky), var(--sky3), var(--sky), transparent);
+            animation: scanLine 3s ease-in-out infinite;
+        }
+        @keyframes scanLine {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        .login-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 150px; height: 150px;
+            background: radial-gradient(circle at bottom right, rgba(0,212,255,0.05), transparent);
+            pointer-events: none;
+        }
+
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            color: var(--sky);
+            text-align: center;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .card-title::before,
+        .card-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--sky));
+        }
+        .card-title::after { background: linear-gradient(270deg, transparent, var(--sky)); }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1.4rem;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--sky2);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--sky2);
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.8rem;
+            background: rgba(0,20,40,0.8);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 10px;
+            color: #e0f4ff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .form-input:focus {
+            border-color: var(--sky);
+            box-shadow: 0 0 20px rgba(0,212,255,0.2), inset 0 0 10px rgba(0,212,255,0.05);
+        }
+        .form-input:focus + i,
+        .input-wrap:focus-within i { color: var(--sky); }
+
+        /* wrong order – icon is after input, fix with sibling selector */
+        .input-wrap { display: flex; align-items: center; }
+        .input-wrap .form-input { order: 2; padding-left: 2.8rem; }
+        .input-wrap .inp-icon { position:absolute; left:14px; color: var(--sky2); transition: color 0.3s; z-index:2; }
+        .form-input:focus ~ .inp-icon { color: var(--sky); }
+
+        /* redo properly */
+        .field-box {
+            position: relative;
+            margin-bottom: 1.4rem;
+        }
+        .field-label {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--sky2);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .field-inner {
+            position: relative;
+        }
+        .field-inner .f-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(0,180,255,0.5);
+            font-size: 0.95rem;
+            transition: color 0.3s;
+            pointer-events: none;
+        }
+        .field-input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.8rem;
+            background: rgba(0,15,35,0.9);
+            border: 1px solid rgba(0,180,255,0.2);
+            border-radius: 10px;
+            color: #d0eeff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .field-input:focus {
+            border-color: var(--sky);
+            box-shadow: 0 0 25px rgba(0,212,255,0.15), 0 0 0 3px rgba(0,212,255,0.05);
+        }
+        .field-input:focus ~ .f-icon { color: var(--sky); }
+
+        /* Login btn */
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--sky2), var(--sky), var(--sky3));
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        .btn-login:hover::before { transform: translateX(100%); }
+        .btn-login:hover {
+            box-shadow: 0 0 40px rgba(0,212,255,0.5);
+            transform: translateY(-2px);
+        }
+        .btn-login:active { transform: translateY(0); }
+
+        /* Alert */
+        .alert {
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert.show { display: flex; }
+        .alert-error { background: rgba(255,50,50,0.1); border: 1px solid rgba(255,50,50,0.3); color: #ff8080; }
+        .alert-success { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--sky); }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(0,212,255,0.1);
+        }
+        .footer-dev {
+            font-size: 0.8rem;
+            color: rgba(0,180,255,0.4);
+            letter-spacing: 1px;
+        }
+        .footer-dev span { color: var(--sky); font-weight: 700; }
+
+        /* Status dot */
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            background: var(--sky);
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+        .status-text { font-size: 0.8rem; color: var(--sky2); letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="login-wrap">
+        <!-- Brand -->
+        <div class="brand-top">
+            <div class="brand-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="brand-name">SAITO_MUTSUKI</div>
+            <div class="brand-sub">Free Fire Emote System</div>
+        </div>
+
+        <!-- Card -->
+        <div class="login-card">
+            <div class="status-row">
+                <div class="status-dot"></div>
+                <div class="status-text">SYSTEM ONLINE</div>
+            </div>
+
+            <div class="card-title">ADMIN ACCESS</div>
+
+            <div id="alertBox" class="alert alert-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="alertMsg">Invalid credentials!</span>
+            </div>
+
+            <div class="field-box">
+                <label class="field-label">Username</label>
+                <div class="field-inner">
+                    <input type="text" class="field-input" id="username" placeholder="Enter username" autocomplete="off">
+                    <i class="fas fa-user f-icon"></i>
+                </div>
+            </div>
+
+            <div class="field-box">
+                <label class="field-label">Password</label>
+                <div class="field-inner">
+                    <input type="password" class="field-input" id="password" placeholder="Enter password" autocomplete="off">
+                    <i class="fas fa-lock f-icon"></i>
+                </div>
+            </div>
+
+            <button class="btn-login" onclick="doLogin()">
+                <i class="fas fa-sign-in-alt"></i> &nbsp; LOGIN
+            </button>
+
+            <div class="login-footer">
+                <div class="footer-dev">Developed by <span>SAITO_MUTSUKI</span> &bull; OB53 Edition</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auth check - already logged in?
+        if (localStorage.getItem('kc_logged_in') === '1') {
+            window.location.replace('index.html');
+        }
+
+        // Generate particles
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 40; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.cssText = `
+                left: ${Math.random()*100}%;
+                width: ${Math.random()*2+1}px;
+                height: ${Math.random()*2+1}px;
+                animation-duration: ${Math.random()*10+8}s;
+                animation-delay: ${Math.random()*10}s;
+                opacity: ${Math.random()*0.5+0.1};
+            `;
+            container.appendChild(p);
+        }
+
+        // Login logic
+        function doLogin() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const alertBox = document.getElementById('alertBox');
+            const alertMsg = document.getElementById('alertMsg');
+
+            if (!user || !pass) {
+                showAlert('error', 'Please enter username and password!');
+                return;
+            }
+
+            const stored = JSON.parse(localStorage.getItem('admin_users') || '[]');
+            const defaultAdmin = { username: 'saito', password: 'free', role: 'admin', region: 'ind' };
+            const allUsers = stored.length ? stored : [defaultAdmin];
+            const found = allUsers.find(u => u.username === user && u.password === pass);
+
+            if (found) {
+                localStorage.setItem('kc_logged_in', '1');
+                showAlert('success', 'Login successful! Redirecting...');
+                setTimeout(() => { window.location.href = 'index.html'; }, 800);
+            } else {
+                showAlert('error', 'Invalid username or password!');
+                document.getElementById('password').value = '';
+            }
+        }
+
+        function showAlert(type, msg) {
+            const box = document.getElementById('alertBox');
+            const msgEl = document.getElementById('alertMsg');
+            box.className = `alert show alert-${type}`;
+            msgEl.textContent = msg;
+        }
+
+        // Enter key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') doLogin();
+        });
+    </script>
+</body>
+</html>
